@@ -1,10 +1,20 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { getBlogs } from '../lib/microcms';
+const { contents: blogs } = await getBlogs();
 ---
 
 <Layout title="Home | My Portfolio">
 	<div class="container mx-auto py-8">
-		<h1 class="text-4xl font-bold">Welcome to my portfolio site!</h1>
-		<p class="mt-4">This is the home page.</p>
+		<h1 class="text-4xl font-bold">Blog Posts</h1>
+		<ul class="mt-8 space-y-4">
+			{blogs.map((blog) => (
+				<li class="border p-4 rounded-md">
+					<a href={`/blog/${blog.id}/`}>
+						<h2 class="text-2xl font-semibold hover:text-blue-600">{blog.title}</h2>
+					</a>
+				</li>
+			))}
+		</ul>
 	</div>
 </Layout>
