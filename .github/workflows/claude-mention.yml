@@ -1,0 +1,247 @@
+name: Claude Mention Handler
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  handle-claude-mention:
+    # @claudeメンションがある場合のみ実行
+    if: contains(github.event.comment.body, '@claude')
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.ref || github.ref }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install anthropic
+    
+    - name: Extract task from comment
+      id: extract-task
+      run: |
+        COMMENT_BODY=$(cat << 'EOF'
+        ${{ github.event.comment.body }}
+        EOF
+        )
+        # @claude以降のテキストを抽出
+        TASK=$(echo "$COMMENT_BODY" | sed -n 's/.*@claude\s*//p')
+        echo "task=$TASK" >> $GITHUB_OUTPUT
+        echo "Task extracted: $TASK"
+    
+    - name: Post acknowledgment
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const isPR = context.payload.issue?.pull_request !== undefined;
+          const number = context.issue.number;
+          
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: number,
+            body: '🤖 Claude is processing your request...'
+          });
+    
+    - name: Execute Claude task
+      id: claude-task
+      env:
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      run: |
+        python3 << 'PYTHON_SCRIPT'
+        import anthropic
+        import os
+        import subprocess
+        import json
+        import re
+
+        client = anthropic.Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
+        task = """${{ steps.extract-task.outputs.task }}"""
+
+        system_prompt = """You are a helpful AI assistant working in a GitHub repository.
+        You can execute bash commands to complete tasks.
+        
+        When you need to execute bash commands:
+        1. Wrap commands in <bash> tags
+        2. You can execute multiple commands
+        3. Always check command output before proceeding
+        
+        Example:
+        <bash>
+        ls -la
+        cat README.md
+        git status
+        </bash>
+        
+        After executing commands, provide a summary of what you did and the results.
+        """
+
+        messages = [
+            {
+                "role": "user",
+                "content": f"Please complete this task in the current repository:\n\n{task}"
+            }
+        ]
+
+        conversation_history = []
+        max_iterations = 10
+        iteration = 0
+
+        while iteration < max_iterations:
+            iteration += 1
+            print(f"\n=== Iteration {iteration} ===")
+            
+            response = client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=4000,
+                system=system_prompt,
+                messages=messages
+            )
+            
+            assistant_message = response.content[0].text
+            conversation_history.append({
+                "role": "assistant",
+                "content": assistant_message
+            })
+            
+            print(f"Claude's response:\n{assistant_message}\n")
+            
+            # bashコマンドを抽出
+            bash_pattern = r'<bash>(.*?)</bash>'
+            bash_commands = re.findall(bash_pattern, assistant_message, re.DOTALL)
+            
+            if not bash_commands:
+                # コマンドがない場合は完了
+                print("No more commands to execute. Task completed.")
+                break
+            
+            # 各bashコマンドを実行
+            command_results = []
+            for cmd in bash_commands:
+                cmd = cmd.strip()
+                print(f"Executing command:\n{cmd}\n")
+                
+                try:
+                    result = subprocess.run(
+                        cmd,
+                        shell=True,
+                        capture_output=True,
+                        text=True,
+                        timeout=300
+                    )
+                    
+                    output = f"STDOUT:\n{result.stdout}\n\nSTDERR:\n{result.stderr}\n\nReturn code: {result.returncode}"
+                    command_results.append({
+                        "command": cmd,
+                        "output": output,
+                        "success": result.returncode == 0
+                    })
+                    print(f"Command output:\n{output}\n")
+                    
+                except subprocess.TimeoutExpired:
+                    output = "Command timed out after 300 seconds"
+                    command_results.append({
+                        "command": cmd,
+                        "output": output,
+                        "success": False
+                    })
+                    print(output)
+                
+                except Exception as e:
+                    output = f"Error executing command: {str(e)}"
+                    command_results.append({
+                        "command": cmd,
+                        "output": output,
+                        "success": False
+                    })
+                    print(output)
+            
+            # 実行結果をClaudeに返す
+            results_text = "\n\n".join([
+                f"Command: {r['command']}\n{r['output']}"
+                for r in command_results
+            ])
+            
+            messages.append({
+                "role": "assistant",
+                "content": assistant_message
+            })
+            messages.append({
+                "role": "user",
+                "content": f"Command execution results:\n\n{results_text}\n\nPlease continue with the task or provide a summary if completed."
+            })
+
+        # 最終レポートを保存
+        final_report = "\n\n---\n\n".join([
+            msg["content"] for msg in conversation_history
+        ])
+        
+        with open("claude_report.md", "w") as f:
+            f.write(f"# Claude Task Execution Report\n\n")
+            f.write(f"**Task:** {task}\n\n")
+            f.write(f"**Iterations:** {iteration}\n\n")
+            f.write(f"## Execution Log\n\n{final_report}")
+        
+        print("Report saved to claude_report.md")
+        PYTHON_SCRIPT
+    
+    - name: Check for changes
+      id: check-changes
+      run: |
+        git config --global user.name 'Claude Bot'
+        git config --global user.email 'claude-bot@users.noreply.github.com'
+        
+        if [[ -n $(git status -s) ]]; then
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Commit and push changes
+      if: steps.check-changes.outputs.has_changes == 'true'
+      run: |
+        git add -A
+        git commit -m "🤖 Claude: ${{ steps.extract-task.outputs.task }}"
+        git push
+    
+    - name: Post results
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          let report = '';
+          
+          try {
+            report = fs.readFileSync('claude_report.md', 'utf8');
+          } catch (error) {
+            report = 'No detailed report available.';
+          }
+          
+          const hasChanges = '${{ steps.check-changes.outputs.has_changes }}' === 'true';
+          const changesMessage = hasChanges 
+            ? '\n\n✅ Changes have been committed and pushed to this branch.'
+            : '\n\n📝 No file changes were made.';
+          
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body: `## 🤖 Claude Task Completed\n\n${report}${changesMessage}`
+          });
