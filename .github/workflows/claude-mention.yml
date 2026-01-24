@@ -1,4 +1,17 @@
-name: Claude Mention Handler
+# Claude mention handler — safer: create a PR instead of pushing directly to the branch
+# Behavior:
+# - Trigger: comment created containing @claude (only OWNER/MEMBER/COLLABORATOR allowed)
+# - Validate ANTHROPIC_API_KEY secret exists
+# - Send task to Claude (Anthropic API) and parse assistant response
+# - Extract <bash>...</bash> blocks, scan for dangerous patterns (blacklist)
+# - If safe, execute commands locally in the runner (captured, timeouted)
+# - If file changes occurred or report generated, create a new branch, commit files, push branch
+# - Open a Pull Request with the summary and include the report file in the branch
+#
+# NOTE: Review and adapt the Anthropic API call to match your chosen SDK/version. Logging may leak data;
+#       consider scrubbing secrets from reports and controlling who can trigger this workflow.
+
+name: Claude Mention Handler (create-pr-safe)
 
 on:
   issue_comment:
@@ -7,241 +20,288 @@ on:
     types: [created]
 
 permissions:
-  contents: write
+  contents: write     # needed to create branches / commits
   issues: write
   pull-requests: write
 
 jobs:
   handle-claude-mention:
-    # @claudeメンションがある場合のみ実行
-    if: contains(github.event.comment.body, '@claude')
+    # Only run when @claude is present and commenter is trusted
+    if: >
+      contains(github.event.comment.body, '@claude') &&
+      (github.event.comment.author_association == 'OWNER' ||
+       github.event.comment.author_association == 'MEMBER' ||
+       github.event.comment.author_association == 'COLLABORATOR')
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 120
+
     steps:
-    - name: Check out code
+    - name: Check out repository
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.event.pull_request.head.ref || github.ref }}
+        ref: ${{ github.event.pull_request.head.ref || github.head_ref || github.ref }}
         token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
-    
+
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    
-    - name: Install dependencies
+
+    - name: Install deps
       run: |
-        pip install anthropic
-    
+        python -m pip install --upgrade pip
+        pip install requests==2.31.0 || pip install requests
+
+    - name: Verify ANTHROPIC_API_KEY present
+      run: |
+        if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+          echo "Missing ANTHROPIC_API_KEY secret. Aborting."
+          exit 1
+        fi
+
     - name: Extract task from comment
       id: extract-task
       run: |
-        COMMENT_BODY=$(cat << 'EOF'
-        ${{ github.event.comment.body }}
-        EOF
-        )
-        # @claude以降のテキストを抽出
-        TASK=$(echo "$COMMENT_BODY" | sed -n 's/.*@claude\s*//p')
-        echo "task=$TASK" >> $GITHUB_OUTPUT
-        echo "Task extracted: $TASK"
-    
-    - name: Post acknowledgment
+        COMMENT_BODY=$(cat <<'EOF'
+${{ github.event.comment.body }}
+EOF
+)
+        TASK=$(echo "$COMMENT_BODY" | sed -n 's/.*@claude\s*//p' | sed 's/^[ \t]*//;s/[ \t]*$//')
+        if [ -z "$TASK" ]; then
+          echo "task_is_empty=true" >> $GITHUB_OUTPUT
+          echo "Task extracted is empty"
+        else
+          echo "task_is_empty=false" >> $GITHUB_OUTPUT
+          echo "task=${TASK}" >> $GITHUB_OUTPUT
+          echo "Task: ${TASK}"
+        fi
+
+    - name: Acknowledge request
+      if: steps.extract-task.outputs.task_is_empty != 'true'
       uses: actions/github-script@v7
       with:
         script: |
-          const isPR = context.payload.issue?.pull_request !== undefined;
-          const number = context.issue.number;
-          
           await github.rest.issues.createComment({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            issue_number: number,
-            body: '🤖 Claude is processing your request...'
+            issue_number: context.issue.number,
+            body: '🤖 Claude is processing your request in safe mode. A PR will be created for any changes; no direct pushes to protected branches will be made.'
           });
-    
-    - name: Execute Claude task
-      id: claude-task
+
+    - name: Run Claude, execute safely, and prepare branch (Python)
+      if: steps.extract-task.outputs.task_is_empty != 'true'
+      id: run-claude
       env:
         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        python3 << 'PYTHON_SCRIPT'
-        import anthropic
-        import os
-        import subprocess
-        import json
-        import re
+        python3 << 'PY'
+import os
+import re
+import subprocess
+import json
+from pathlib import Path
+from datetime import datetime
+import requests
+import sys
 
-        client = anthropic.Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
-        task = """${{ steps.extract-task.outputs.task }}"""
+repo_owner = os.environ.get('GITHUB_REPOSITORY', '').split('/')[0]
+repo_name = os.environ.get('GITHUB_REPOSITORY', '').split('/')[1] if '/' in os.environ.get('GITHUB_REPOSITORY','') else ''
+run_id = os.environ.get('GITHUB_RUN_ID', 'local')
+comment_id = os.environ.get('GITHUB_EVENT_COMMENT_ID') or ''
+task = """${{ steps.extract-task.outputs.task }}"""
+anthropic_key = os.environ.get('ANTHROPIC_API_KEY')
 
-        system_prompt = """You are a helpful AI assistant working in a GitHub repository.
-        You can execute bash commands to complete tasks.
-        
-        When you need to execute bash commands:
-        1. Wrap commands in <bash> tags
-        2. You can execute multiple commands
-        3. Always check command output before proceeding
-        
-        Example:
-        <bash>
-        ls -la
-        cat README.md
-        git status
-        </bash>
-        
-        After executing commands, provide a summary of what you did and the results.
-        """
+report_lines = []
+report_lines.append(f"Task:\n{task}\n")
 
-        messages = [
-            {
-                "role": "user",
-                "content": f"Please complete this task in the current repository:\n\n{task}"
-            }
-        ]
+if not anthropic_key:
+    report_lines.append("No ANTHROPIC_API_KEY; aborting.")
+    Path("claude_report.md").write_text("\n\n".join(report_lines))
+    sys.exit(1)
 
-        conversation_history = []
-        max_iterations = 10
-        iteration = 0
+# ---- Call Anthropic (HTTP fallback) ----
+# NOTE: adapt this to your SDK/endpoint/version if you use official anthropic client
+model = "claude-2"  # adjust if needed
+prompt = f"You are a helpful assistant working in a GitHub repository. When you want the runner to execute shell commands, wrap them in <bash>...</bash>.\n\nTask:\n{task}\n\nRespond with commands only when necessary."
+try:
+    headers = {
+        "x-api-key": anthropic_key,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "max_tokens_to_sample": 1500
+    }
+    resp = requests.post("https://api.anthropic.com/v1/complete", headers=headers, json=payload, timeout=60)
+    resp.raise_for_status()
+    body = resp.json()
+    # Response field used here follows common Claude HTTP API: "completion"
+    assistant_text = body.get("completion") or body.get("completion", "")
+except Exception as e:
+    assistant_text = ""
+    report_lines.append("Anthropic API error: " + str(e))
+    Path("claude_report.md").write_text("\n\n".join(report_lines))
+    sys.exit(2)
 
-        while iteration < max_iterations:
-            iteration += 1
-            print(f"\n=== Iteration {iteration} ===")
-            
-            response = client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=4000,
-                system=system_prompt,
-                messages=messages
-            )
-            
-            assistant_message = response.content[0].text
-            conversation_history.append({
-                "role": "assistant",
-                "content": assistant_message
-            })
-            
-            print(f"Claude's response:\n{assistant_message}\n")
-            
-            # bashコマンドを抽出
-            bash_pattern = r'<bash>(.*?)</bash>'
-            bash_commands = re.findall(bash_pattern, assistant_message, re.DOTALL)
-            
-            if not bash_commands:
-                # コマンドがない場合は完了
-                print("No more commands to execute. Task completed.")
-                break
-            
-            # 各bashコマンドを実行
-            command_results = []
-            for cmd in bash_commands:
-                cmd = cmd.strip()
-                print(f"Executing command:\n{cmd}\n")
-                
-                try:
-                    result = subprocess.run(
-                        cmd,
-                        shell=True,
-                        capture_output=True,
-                        text=True,
-                        timeout=300
-                    )
-                    
-                    output = f"STDOUT:\n{result.stdout}\n\nSTDERR:\n{result.stderr}\n\nReturn code: {result.returncode}"
-                    command_results.append({
-                        "command": cmd,
-                        "output": output,
-                        "success": result.returncode == 0
-                    })
-                    print(f"Command output:\n{output}\n")
-                    
-                except subprocess.TimeoutExpired:
-                    output = "Command timed out after 300 seconds"
-                    command_results.append({
-                        "command": cmd,
-                        "output": output,
-                        "success": False
-                    })
-                    print(output)
-                
-                except Exception as e:
-                    output = f"Error executing command: {str(e)}"
-                    command_results.append({
-                        "command": cmd,
-                        "output": output,
-                        "success": False
-                    })
-                    print(output)
-            
-            # 実行結果をClaudeに返す
-            results_text = "\n\n".join([
-                f"Command: {r['command']}\n{r['output']}"
-                for r in command_results
-            ])
-            
-            messages.append({
-                "role": "assistant",
-                "content": assistant_message
-            })
-            messages.append({
-                "role": "user",
-                "content": f"Command execution results:\n\n{results_text}\n\nPlease continue with the task or provide a summary if completed."
-            })
+report_lines.append("Assistant response:\n" + assistant_text + "\n")
 
-        # 最終レポートを保存
-        final_report = "\n\n---\n\n".join([
-            msg["content"] for msg in conversation_history
-        ])
-        
-        with open("claude_report.md", "w") as f:
-            f.write(f"# Claude Task Execution Report\n\n")
-            f.write(f"**Task:** {task}\n\n")
-            f.write(f"**Iterations:** {iteration}\n\n")
-            f.write(f"## Execution Log\n\n{final_report}")
-        
-        print("Report saved to claude_report.md")
-        PYTHON_SCRIPT
-    
-    - name: Check for changes
-      id: check-changes
-      run: |
-        git config --global user.name 'Claude Bot'
-        git config --global user.email 'claude-bot@users.noreply.github.com'
-        
-        if [[ -n $(git status -s) ]]; then
-          echo "has_changes=true" >> $GITHUB_OUTPUT
-        else
-          echo "has_changes=false" >> $GITHUB_OUTPUT
-        fi
-    
-    - name: Commit and push changes
-      if: steps.check-changes.outputs.has_changes == 'true'
-      run: |
-        git add -A
-        git commit -m "🤖 Claude: ${{ steps.extract-task.outputs.task }}"
-        git push
-    
-    - name: Post results
+# ---- Extract <bash> blocks ----
+bash_pattern = re.compile(r'<bash>(.*?)</bash>', re.DOTALL | re.IGNORECASE)
+bash_commands = [m.strip() for m in bash_pattern.findall(assistant_text)]
+
+if not bash_commands:
+    report_lines.append("No <bash> commands found. Nothing to execute.")
+else:
+    # ---- Dangerous pattern blacklist ----
+    dangerous_patterns = [
+        r'\brm\s+-rf\b', r'\brm\s+-R\b', r'\bsudo\b', r'\bshutdown\b',
+        r'\bmkfs\b', r'\bdd\b', r'curl\s+.*\|\s*sh', r'wget\s+.*\|\s*sh',
+        r'>\s*/dev/sd', r'\b:>\b', r'\bchmod\s+777\b'
+    ]
+    joined_cmds = "\n".join(bash_commands)
+    for p in dangerous_patterns:
+        if re.search(p, joined_cmds):
+            report_lines.append("ABORTED: Dangerous command detected pattern: " + p)
+            Path("claude_report.md").write_text("\n\n".join(report_lines))
+            # Create a marker file to indicate we aborted due to danger
+            Path("claude_aborted_due_to_danger.txt").write_text("Detected pattern: " + p)
+            sys.exit(3)
+
+    # Optional whitelist check (restrict allowed commands)
+    # allowed_prefixes = ["echo","ls","cat","git","python","pytest","npm","node"]
+    # If you want hard whitelist, uncomment and enforce below
+
+    # Execute commands with timeout and capture
+    for idx, cmd in enumerate(bash_commands, start=1):
+        report_lines.append(f"--- Executing command #{idx} ---\n{cmd}\n")
+        try:
+            proc = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=300)
+            out = proc.stdout or ""
+            err = proc.stderr or ""
+            rc = proc.returncode
+            report_lines.append(f"STDOUT:\n{out}\nSTDERR:\n{err}\nReturn code: {rc}")
+        except subprocess.TimeoutExpired:
+            report_lines.append("Command timed out after 300s")
+        except Exception as e:
+            report_lines.append("Execution error: " + str(e))
+
+# ---- Save report and detect repo changes ----
+report_text = "# Claude Task Execution Report\n\n" + "\n\n".join(report_lines)
+Path("claude_report.md").write_text(report_text)
+
+# Determine if git has changes
+changed = False
+try:
+    status = subprocess.run("git status --porcelain", shell=True, capture_output=True, text=True)
+    if status.stdout.strip():
+        changed = True
+except Exception as e:
+    report_lines.append("git status error: " + str(e))
+    Path("claude_report.md").write_text(report_text + "\n\nGit status error: " + str(e))
+
+# If changed, create a new branch, commit and push
+branch_name = f"claude/{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{run_id}"
+if changed:
+    try:
+        subprocess.run('git config user.email "claude-bot@users.noreply.github.com"', shell=True, check=True)
+        subprocess.run('git config user.name "Claude Bot"', shell=True, check=True)
+        # create branch
+        subprocess.run(f'git checkout -b {branch_name}', shell=True, check=True)
+        subprocess.run('git add -A', shell=True, check=True)
+        # Use short task summary in commit message
+        commit_msg = f"🤖 Claude: {task[:200].replace(chr(10),' ')}"
+        subprocess.run(f'git commit -m "{commit_msg}"', shell=True, check=True)
+        # push branch using GITHUB_TOKEN
+        # use https remote with token
+        repo = os.environ.get('GITHUB_REPOSITORY')
+        if not repo:
+            raise RuntimeError("GITHUB_REPOSITORY not set")
+        token = os.environ.get('GITHUB_TOKEN')
+        remote_url = f"https://x-access-token:{token}@github.com/{repo}.git"
+        subprocess.run(f'git push {remote_url} {branch_name}', shell=True, check=True)
+    except Exception as e:
+        report_lines.append("Error creating/pushing branch: " + str(e))
+        Path("claude_report.md").write_text("\n\n".join(report_lines))
+        sys.exit(4)
+
+# Export outputs
+out = {"report_file": "claude_report.md", "has_changes": str(changed).lower(), "branch_name": branch_name}
+print("::set-output name=result::" + json.dumps(out))
+PY
+
+    - name: Upload report artifact
+      if: steps.run-claude.outputs.result != ''
+      uses: actions/upload-artifact@v4
+      with:
+        name: claude-report
+        path: claude_report.md
+
+    - name: Create PR for changes (if any)
+      if: steps.run-claude.outputs.result != '' && fromJSON(steps.run-claude.outputs.result).has_changes == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const payload = JSON.parse(process.env.RUN_CLAUDE_RESULT || '{}');
+          const branch = payload.branch_name || '';
+          const reportPath = payload.report_file || 'claude_report.md';
+          const task = `\n\n${{ steps.extract-task.outputs.task }}`;
+          const title = `🤖 Claude: ${task.slice(0,140).replace(/\n/g,' ')}`;
+          // try to derive base branch
+          const base = context.payload.pull_request ? context.payload.pull_request.base.ref : context.ref.replace('refs/heads/','') || 'main';
+
+          // Read report content from the checked-out file
+          const fs = require('fs');
+          let report = '';
+          try {
+            report = fs.readFileSync(reportPath, 'utf8');
+          } catch (e) {
+            report = 'Report file not found in branch.';
+          }
+
+          const body = `## Claude automated changes\n\n**Task:**\n${{ steps.extract-task.outputs.task }}\n\n**Report (summary):**\n\n` + report.split('\n').slice(0,40).join('\n') + `\n\n(Full report and changed files are included in this branch for review.)`;
+
+          const pr = await github.rest.pulls.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            head: branch,
+            base: base,
+            body: body
+          });
+
+          // comment back on the issue/PR where the request originated
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body: `✅ I created a Pull Request with Claude's proposed changes: ${pr.data.html_url}`
+          });
+
+      env:
+        RUN_CLAUDE_RESULT: ${{ steps.run-claude.outputs.result }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Post final note (no changes)
+      if: steps.run-claude.outputs.result != '' && fromJSON(steps.run-claude.outputs.result).has_changes == 'false'
       uses: actions/github-script@v7
       with:
         script: |
           const fs = require('fs');
           let report = '';
-          
           try {
             report = fs.readFileSync('claude_report.md', 'utf8');
-          } catch (error) {
-            report = 'No detailed report available.';
+            if (report.length > 64000) {
+              report = report.slice(0, 64000) + '\n\n[Truncated]';
+            }
+          } catch (e) {
+            report = 'No report available';
           }
-          
-          const hasChanges = '${{ steps.check-changes.outputs.has_changes }}' === 'true';
-          const changesMessage = hasChanges 
-            ? '\n\n✅ Changes have been committed and pushed to this branch.'
-            : '\n\n📝 No file changes were made.';
-          
           await github.rest.issues.createComment({
             owner: context.repo.owner,
             repo: context.repo.repo,
             issue_number: context.issue.number,
-            body: `## 🤖 Claude Task Completed\n\n${report}${changesMessage}`
+            body: `## 🤖 Claude Task Completed (no file changes)\n\n${report}`
           });
