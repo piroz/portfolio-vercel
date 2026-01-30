@@ -42,7 +42,7 @@ export default function ShareButtons({ title, url }: ShareButtonsProps) {
       {/* Copy Link */}
       <button
         onClick={handleCopyLink}
-        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
         aria-label="リンクをコピー"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

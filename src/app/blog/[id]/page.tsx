@@ -62,13 +62,13 @@ export default async function BlogDetailPage({ params }: Props) {
   });
 
   return (
-    <article className="py-16">
+    <article className="py-16 bg-gradient-to-b from-purple-50 to-white dark:from-purple-950/20 dark:to-gray-950">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl">
           {/* Back Link */}
           <Link
             href="/blog"
-            className="inline-flex items-center text-blue-600 hover:text-blue-500 mb-8 transition-colors"
+            className="inline-flex items-center text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300 mb-8 transition-colors"
           >
             <svg
               className="w-5 h-5 mr-2"
@@ -90,16 +90,16 @@ export default async function BlogDetailPage({ params }: Props) {
           <header className="mb-8">
             {/* Category */}
             {blog.category && (
-              <span className="inline-block rounded-full bg-purple-50 px-3 py-1 text-sm font-medium text-purple-700 mb-4">
+              <span className="inline-block rounded-full bg-purple-50 dark:bg-purple-900/30 px-3 py-1 text-sm font-medium text-purple-700 dark:text-purple-300 mb-4">
                 {blog.category}
               </span>
             )}
 
             {/* Title */}
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">{blog.title}</h1>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">{blog.title}</h1>
 
             {/* Meta Info */}
-            <div className="flex items-center text-gray-600">
+            <div className="flex items-center text-gray-600 dark:text-gray-400">
               <time dateTime={blog.publishedAt}>{formattedDate}</time>
             </div>
           </header>
@@ -119,13 +119,13 @@ export default async function BlogDetailPage({ params }: Props) {
 
           {/* Content */}
           <div
-            className="prose prose-lg prose-blue max-w-none"
+            className="prose prose-lg max-w-none"
             dangerouslySetInnerHTML={{ __html: blog.content }}
           />
 
           {/* Share Buttons */}
-          <div className="mt-12 pt-8 border-t border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">この記事をシェア</h3>
+          <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">この記事をシェア</h3>
             <ShareButtons
               title={blog.title}
               url={`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/blog/${blog.id}`}

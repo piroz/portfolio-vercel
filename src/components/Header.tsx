@@ -20,7 +20,7 @@ export default function Header() {
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="text-2xl font-bold text-gray-900 dark:text-gray-100 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+          <Link href="/" className="text-2xl font-bold text-black dark:text-gray-100 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
             hello!
           </Link>
 
@@ -30,7 +30,7 @@ export default function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 font-medium transition-colors"
+                className="text-black dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 font-medium transition-colors"
               >
                 {link.label}
               </Link>
@@ -41,7 +41,7 @@ export default function Header() {
           {/* Mobile Menu Button */}
           <button
             type="button"
-            className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-500"
+            className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-black dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-500"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-expanded={isMenuOpen}
           >
@@ -65,7 +65,7 @@ export default function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                className="block px-3 py-2 rounded-md text-base font-medium text-black dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {link.label}
