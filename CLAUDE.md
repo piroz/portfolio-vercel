@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Next.js 14 portfolio site using the App Router architecture with TypeScript, Tailwind CSS, and microCMS as a headless CMS for blog content. The site features ISR (Incremental Static Regeneration) for optimal performance with dynamic content.
+This is a Next.js 16 portfolio site using the App Router architecture with TypeScript, Tailwind CSS v4, and microCMS as a headless CMS for blog content. The site features ISR (Incremental Static Regeneration) for optimal performance with dynamic content, and includes theme support via next-themes.
 
 ## Development Commands
 
@@ -64,6 +64,7 @@ The blog content is fetched from microCMS using three main functions in `src/lib
 - `src/components/Header.tsx` - Mobile menu state
 - `src/components/ContactForm.tsx` - Form state management
 - `src/components/ShareButtons.tsx` - Browser APIs (clipboard, window.location)
+- `src/components/ThemeProvider.tsx` - Theme context wrapper for next-themes
 
 **Server Components** (default):
 - All page components
@@ -83,7 +84,12 @@ The blog content is fetched from microCMS using three main functions in `src/lib
 - Tailwind CSS v4 with inline theme configuration in `src/app/globals.css`
 - Custom prose styles for blog content rendering (`.prose` class)
 - Global animations and card hover effects defined in globals.css
-- No dark mode implemented (commented out in original template)
+- Theme support via `next-themes` package (light/dark mode capability via ThemeProvider)
+
+### Image Configuration
+
+- `next.config.ts` allows remote images from `images.microcms-assets.io` for microCMS thumbnails
+- Next.js Image component is used throughout for automatic optimization
 
 ## microCMS Blog Schema
 
@@ -124,6 +130,20 @@ When updating personal information:
 6. **Contact info**: `src/app/contact/page.tsx` - Email and social links
 
 All of these use hardcoded data (no CMS), so direct file edits are required.
+
+## Common Issues & Solutions
+
+### Type Import Errors with next-themes
+
+When importing types from `next-themes`, always import from the package root, not from `/dist/types`:
+
+```typescript
+// ✅ Correct
+import { ThemeProvider, type ThemeProviderProps } from 'next-themes';
+
+// ❌ Wrong - causes build errors
+import { type ThemeProviderProps } from 'next-themes/dist/types';
+```
 
 ## Known Behaviors
 
