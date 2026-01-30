@@ -10,10 +10,7 @@ const nextConfig: NextConfig = {
         pathname: "/**",
       },
     ],
-  },
-  distDir: "dist",
-  output: "export",
-  trailingSlash: true,
+  }
 };
 
 export default nextConfig;
