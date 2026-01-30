@@ -7,34 +7,34 @@ export const metadata: Metadata = {
 };
 
 const skills = [
-  { name: 'JavaScript/TypeScript', level: 90 },
-  { name: 'React/Next.js', level: 85 },
-  { name: 'Node.js', level: 80 },
-  { name: 'Tailwind CSS', level: 85 },
-  { name: 'Git/GitHub', level: 85 },
-  { name: 'SQL/NoSQL', level: 75 },
+  { name: 'JavaScript/TypeScript', level: 99 },
+  { name: 'React/Next.js', level: 99 },
+  { name: 'Node.js', level: 99 },
+  { name: 'Tailwind CSS', level: 99 },
+  { name: 'Git/GitHub', level: 99 },
+  { name: 'SQL/NoSQL', level: 99 },
 ];
 
 const technologies = [
   { category: 'フロントエンド', items: ['React', 'Next.js', 'Vue.js', 'TypeScript', 'Tailwind CSS'] },
-  { category: 'バックエンド', items: ['Node.js', 'Express', 'NestJS', 'Python', 'FastAPI'] },
+  { category: 'バックエンド', items: ['Node.js', 'PHP', 'Go', 'Python'] },
   { category: 'データベース', items: ['PostgreSQL', 'MySQL', 'MongoDB', 'Redis'] },
-  { category: 'ツール', items: ['Git', 'Docker', 'Vercel', 'AWS', 'Figma'] },
+  { category: 'ツール', items: ['Git', 'Docker', 'Vercel', 'AWS', 'GCP'] },
 ];
 
 const experiences = [
   {
-    period: '2022年 - 現在',
-    title: 'フルスタックエンジニア',
-    company: 'テック株式会社',
-    description: 'Next.js + TypeScriptを使用したWebアプリケーション開発、API設計、データベース設計を担当。',
+    period: '20xx年 - 現在',
+    title: 'ソフトウェアエンジニア',
+    company: 'xxxx inc.',
+    description: '〇〇の立ち上げを担当。',
   },
-  {
-    period: '2020年 - 2022年',
-    title: 'フロントエンドエンジニア',
-    company: 'ウェブソリューションズ',
-    description: 'React/Vue.jsを使用したSPA開発、レスポンシブデザイン実装、パフォーマンス最適化を担当。',
-  },
+  // {
+  //   period: '2020年 - 2022年',
+  //   title: 'フロントエンドエンジニア',
+  //   company: 'ウェブソリューションズ',
+  //   description: 'React/Vue.jsを使用したSPA開発、レスポンシブデザイン実装、パフォーマンス最適化を担当。',
+  // },
 ];
 
 export default function AboutPage() {
