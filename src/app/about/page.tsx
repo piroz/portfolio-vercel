@@ -39,14 +39,14 @@ const experiences = [
 
 export default function AboutPage() {
   return (
-    <div className="py-16">
+    <div className="py-16 bg-white dark:bg-gray-900">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Profile Section */}
         <section className="mb-16">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
             {/* Profile Image */}
             <div className="lg:col-span-1">
-              <div className="relative aspect-square w-full max-w-sm mx-auto overflow-hidden rounded-2xl bg-gray-100">
+              <div className="relative aspect-square w-full max-w-sm mx-auto overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800">
                 <Image
                   src="/images/profile.jpg"
                   alt="プロフィール写真"
@@ -59,15 +59,15 @@ export default function AboutPage() {
 
             {/* Profile Info */}
             <div className="lg:col-span-2">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">自己紹介</h1>
-              <p className="text-lg text-gray-600 mb-6 leading-relaxed">
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">自己紹介</h1>
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
                 こんにちは。Webデベロッパーとして、モダンな技術スタックを用いたアプリケーション開発に取り組んでいます。
               </p>
-              <p className="text-lg text-gray-600 mb-6 leading-relaxed">
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
                 フロントエンドからバックエンドまで幅広く対応し、特にNext.js、React、TypeScriptを用いた開発を得意としています。
                 ユーザー体験を第一に考え、パフォーマンスとアクセシビリティにも配慮した設計を心がけています。
               </p>
-              <p className="text-lg text-gray-600 leading-relaxed">
+              <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
                 新しい技術の学習に情熱を持ち、オープンソースコミュニティへの貢献も積極的に行っています。
                 チーム開発においては、コミュニケーションを大切にし、コードレビューやペアプログラミングを通じて
                 チーム全体の技術力向上に貢献しています。
@@ -78,17 +78,17 @@ export default function AboutPage() {
 
         {/* Skills Section */}
         <section className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">スキル</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">スキル</h2>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {skills.map((skill) => (
-              <div key={skill.name} className="bg-white p-6 rounded-lg border border-gray-200">
+              <div key={skill.name} className="glass-card border-purple-100/50 dark:border-purple-500/20 p-6 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900">{skill.name}</h3>
-                  <span className="text-sm font-medium text-gray-600">{skill.level}%</span>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{skill.name}</h3>
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{skill.level}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                   <div
-                    className="bg-blue-600 h-2.5 rounded-full transition-all"
+                    className="bg-purple-600 dark:bg-purple-500 h-2.5 rounded-full transition-all"
                     style={{ width: `${skill.level}%` }}
                   />
                 </div>
@@ -99,16 +99,16 @@ export default function AboutPage() {
 
         {/* Technologies Section */}
         <section className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">使用技術</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">使用技術</h2>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             {technologies.map((tech) => (
-              <div key={tech.category} className="bg-white p-6 rounded-lg border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">{tech.category}</h3>
+              <div key={tech.category} className="glass-card border-purple-100/50 dark:border-purple-500/20 p-6 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{tech.category}</h3>
                 <ul className="space-y-2">
                   {tech.items.map((item) => (
-                    <li key={item} className="flex items-center text-gray-600">
+                    <li key={item} className="flex items-center text-gray-600 dark:text-gray-400">
                       <svg
-                        className="w-5 h-5 mr-2 text-blue-600"
+                        className="w-5 h-5 mr-2 text-purple-600 dark:text-purple-400"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -131,16 +131,16 @@ export default function AboutPage() {
 
         {/* Experience Section */}
         <section>
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">経歴</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">経歴</h2>
           <div className="space-y-8">
             {experiences.map((exp, index) => (
-              <div key={index} className="relative pl-8 pb-8 border-l-2 border-gray-200 last:pb-0">
-                <div className="absolute -left-2 top-0 w-4 h-4 rounded-full bg-blue-600" />
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                  <div className="text-sm font-medium text-blue-600 mb-1">{exp.period}</div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-1">{exp.title}</h3>
-                  <div className="text-gray-600 mb-3">{exp.company}</div>
-                  <p className="text-gray-600 leading-relaxed">{exp.description}</p>
+              <div key={index} className="relative pl-8 pb-8 border-l-2 border-gray-200 dark:border-gray-700 last:pb-0">
+                <div className="absolute -left-2 top-0 w-4 h-4 rounded-full bg-purple-600 dark:bg-purple-500" />
+                <div className="glass-card border-purple-100/50 dark:border-purple-500/20 p-6 rounded-lg">
+                  <div className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-1">{exp.period}</div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-1">{exp.title}</h3>
+                  <div className="text-gray-600 dark:text-gray-400 mb-3">{exp.company}</div>
+                  <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{exp.description}</p>
                 </div>
               </div>
             ))}

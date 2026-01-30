@@ -3,6 +3,24 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Purple theme colors */
+  --purple-primary: #9333ea;
+  --purple-primary-light: #a855f7;
+  --purple-primary-dark: #7e22ce;
+  --purple-accent: #c084fc;
+  --purple-bg-light: #f3e8ff;
+  --purple-muted: #e9d5ff;
+
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(147, 51, 234, 0.1);
+  --glass-blur: 12px;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #9333ea 0%, #a855f7 100%);
+  --gradient-accent: linear-gradient(135deg, #a855f7 0%, #c084fc 100%);
+  --gradient-hero: linear-gradient(to bottom, #f3e8ff, #ffffff);
 }
 
 @theme inline {
@@ -10,6 +28,35 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Purple theme mapped to Tailwind utilities */
+  --color-primary: var(--purple-primary);
+  --color-primary-light: var(--purple-primary-light);
+  --color-primary-dark: var(--purple-primary-dark);
+  --color-accent: var(--purple-accent);
+}
+
+[data-theme="dark"] {
+  --background: #0f0a1f;
+  --foreground: #ededed;
+
+  /* Dark mode purple adjustments */
+  --purple-primary: #a855f7;
+  --purple-primary-light: #c084fc;
+  --purple-primary-dark: #9333ea;
+  --purple-accent: #d8b4fe;
+  --purple-bg-light: #1e1b4b;
+  --purple-muted: #4c1d95;
+
+  /* Dark glassmorphism */
+  --glass-bg: rgba(30, 27, 75, 0.5);
+  --glass-border: rgba(168, 85, 247, 0.2);
+  --glass-blur: 16px;
+
+  /* Dark gradients */
+  --gradient-primary: linear-gradient(135deg, #a855f7 0%, #c084fc 100%);
+  --gradient-accent: linear-gradient(135deg, #c084fc 0%, #d8b4fe 100%);
+  --gradient-hero: linear-gradient(to bottom, #1e1b4b, #0f0a1f);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -65,13 +112,13 @@ body {
 }
 
 .prose a {
-  color: #2563eb;
+  color: var(--purple-primary);
   text-decoration: underline;
   font-weight: 500;
 }
 
 .prose a:hover {
-  color: #1d4ed8;
+  color: var(--purple-primary-dark);
 }
 
 .prose strong {
@@ -172,4 +219,57 @@ html {
 .card-hover:hover {
   transform: translateY(-4px);
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Glassmorphism utilities */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+}
+
+.glass-header {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(147, 51, 234, 0.1);
+}
+
+[data-theme="dark"] .glass-header {
+  background: rgba(15, 10, 31, 0.8);
+  border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+/* Dark mode prose styles */
+[data-theme="dark"] .prose {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .prose h1,
+[data-theme="dark"] .prose h2,
+[data-theme="dark"] .prose h3,
+[data-theme="dark"] .prose strong {
+  color: #f3f4f6;
+}
+
+[data-theme="dark"] .prose code {
+  color: #f3f4f6;
+  background-color: #374151;
+}
+
+[data-theme="dark"] .prose blockquote {
+  color: #e5e7eb;
+  border-left-color: #4b5563;
+}
+
+/* Reduce blur on mobile for performance */
+@media (max-width: 768px) {
+  :root {
+    --glass-blur: 8px;
+  }
+
+  [data-theme="dark"] {
+    --glass-blur: 12px;
+  }
 }

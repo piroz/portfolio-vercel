@@ -64,12 +64,12 @@ const projects = [
 
 export default function ProjectsPage() {
   return (
-    <div className="py-16 bg-gray-50">
+    <div className="py-16 bg-gray-50 dark:bg-purple-950/20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">プロジェクト</h1>
-          <p className="text-lg text-gray-600">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">プロジェクト</h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400">
             これまでに制作したプロジェクトの一部をご紹介します。各プロジェクトは実践的な技術スタックを使用し、
             ユーザー体験とコード品質を重視して開発しています。
           </p>
@@ -83,16 +83,16 @@ export default function ProjectsPage() {
         </div>
 
         {/* CTA Section */}
-        <div className="mt-16 text-center bg-white rounded-lg border border-gray-200 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+        <div className="mt-16 text-center glass-card border-purple-100/50 dark:border-purple-500/20 rounded-lg p-8">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             一緒にプロジェクトを始めませんか？
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             新しいアイデアやプロジェクトについて、お気軽にお問い合わせください。
           </p>
           <a
             href="/contact"
-            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-blue-500 transition-colors"
+            className="inline-flex items-center justify-center rounded-md bg-purple-600 dark:bg-purple-500 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-purple-500 dark:hover:bg-purple-400 transition-colors"
           >
             お問い合わせ
           </a>

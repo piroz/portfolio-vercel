@@ -51,16 +51,16 @@ export default async function Home() {
       <Hero />
 
       {/* Featured Projects Section */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-white dark:bg-gray-900">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">注目のプロジェクト</h2>
-              <p className="mt-2 text-gray-600">最近制作したプロジェクトをご紹介します</p>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">注目のプロジェクト</h2>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">最近制作したプロジェクトをご紹介します</p>
             </div>
             <Link
               href="/projects"
-              className="text-blue-600 hover:text-blue-500 font-medium transition-colors"
+              className="text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300 font-medium transition-colors"
             >
               すべて見る →
             </Link>
@@ -76,16 +76,16 @@ export default async function Home() {
 
       {/* Latest Blog Posts Section */}
       {latestBlogs.length > 0 && (
-        <section className="py-16 bg-gray-50">
+        <section className="py-16 bg-gray-50 dark:bg-purple-950/20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900">最新の記事</h2>
-                <p className="mt-2 text-gray-600">技術ブログと開発ノート</p>
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">最新の記事</h2>
+                <p className="mt-2 text-gray-600 dark:text-gray-400">技術ブログと開発ノート</p>
               </div>
               <Link
                 href="/blog"
-                className="text-blue-600 hover:text-blue-500 font-medium transition-colors"
+                className="text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300 font-medium transition-colors"
               >
                 すべて見る →
               </Link>

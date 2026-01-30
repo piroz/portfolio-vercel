@@ -34,7 +34,7 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="border-t border-gray-200 bg-white">
+    <footer className="glass-header border-purple-100/30 dark:border-purple-500/20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col items-center justify-between space-y-4 md:flex-row md:space-y-0">
           {/* Social Links */}
@@ -45,7 +45,7 @@ export default function Footer() {
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-600 hover:text-gray-900 transition-colors"
+                className="text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
                 aria-label={link.name}
               >
                 {link.icon}
@@ -54,7 +54,7 @@ export default function Footer() {
           </div>
 
           {/* Copyright */}
-          <div className="text-center text-sm text-gray-600">
+          <div className="text-center text-sm text-gray-600 dark:text-gray-400">
             <p>&copy; {currentYear} Portfolio. All rights reserved.</p>
           </div>
         </div>
