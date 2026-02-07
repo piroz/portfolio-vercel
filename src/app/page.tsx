@@ -8,28 +8,67 @@ import Link from 'next/link';
 // サンプルプロジェクトデータ
 const featuredProjects = [
   {
-    title: 'Eコマースサイト',
-    description: 'Next.js + Stripe を使用したモダンなオンラインショップ。リアルタイム在庫管理とセキュアな決済システムを実装。',
+    title: 'XXXサイト',
+    description:
+      'XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX ',
     image: '/images/project1.jpg',
-    tags: ['Next.js', 'TypeScript', 'Stripe', 'Tailwind CSS'],
-    githubUrl: 'https://github.com/yourusername/ecommerce',
-    demoUrl: 'https://ecommerce-demo.vercel.app',
+    tags: ['Go', 'Python'],
+    githubUrl: 'https://github.com/piroz',
+    demoUrl: 'https://mrazblog.vercel.app',
   },
-  {
-    title: 'タスク管理アプリ',
-    description: 'ドラッグ&ドロップ機能を備えたカンバンボード。React DnDとFirebaseを使用したリアルタイム同期。',
-    image: '/images/project2.jpg',
-    tags: ['React', 'Firebase', 'React DnD', 'Material-UI'],
-    githubUrl: 'https://github.com/yourusername/task-manager',
-    demoUrl: 'https://task-manager-demo.vercel.app',
-  },
-  {
-    title: 'ポートフォリオCMS',
-    description: 'microCMSを統合したヘッドレスCMSポートフォリオサイト。ISRによる高速なコンテンツ配信。',
-    image: '/images/project3.jpg',
-    tags: ['Next.js', 'microCMS', 'Vercel', 'ISR'],
-    githubUrl: 'https://github.com/yourusername/portfolio-cms',
-  },
+  // {
+  //   title: 'Eコマースサイト',
+  //   description:
+  //     'Next.js 14のApp RouterとStripe APIを使用したフルスタックのオンラインショップ。商品管理、カート機能、セキュアな決済処理、注文履歴管理を実装。リアルタイム在庫管理とレスポンシブデザインにも対応。',
+  //   image: '/images/project1.jpg',
+  //   tags: ['Next.js', 'TypeScript', 'Stripe', 'Tailwind CSS', 'PostgreSQL'],
+  //   githubUrl: 'https://github.com/yourusername/ecommerce',
+  //   demoUrl: 'https://ecommerce-demo.vercel.app',
+  // },
+  // {
+  //   title: 'タスク管理アプリ',
+  //   description:
+  //     'ドラッグ&ドロップ機能を備えたカンバンボード型のタスク管理アプリ。React DnDとFirebaseを使用してリアルタイム同期を実現。チーム間のコラボレーション機能、タスクのフィルタリング、優先度設定機能を搭載。',
+  //   image: '/images/project2.jpg',
+  //   tags: ['React', 'Firebase', 'React DnD', 'Material-UI', 'Firestore'],
+  //   githubUrl: 'https://github.com/yourusername/task-manager',
+  //   demoUrl: 'https://task-manager-demo.vercel.app',
+  // },
+  // {
+  //   title: 'ポートフォリオCMS',
+  //   description:
+  //     'microCMSを統合したヘッドレスCMSポートフォリオサイト。ISR（Incremental Static Regeneration）による高速なコンテンツ配信を実現。ブログ機能、プロジェクト管理、SEO最適化を実装。',
+  //   image: '/images/project3.jpg',
+  //   tags: ['Next.js', 'microCMS', 'Vercel', 'ISR', 'TypeScript'],
+  //   githubUrl: 'https://github.com/yourusername/portfolio-cms',
+  // },
+  // {
+  //   title: 'リアルタイムチャットアプリ',
+  //   description:
+  //     'WebSocketを使用したリアルタイムチャットアプリケーション。プライベートチャット、グループチャット、ファイル共有機能を実装。Node.js + Socket.ioによるバックエンド、Reactによるフロントエンド。',
+  //   image: '/images/project4.jpg',
+  //   tags: ['React', 'Node.js', 'Socket.io', 'MongoDB', 'Express'],
+  //   githubUrl: 'https://github.com/yourusername/chat-app',
+  //   demoUrl: 'https://chat-app-demo.vercel.app',
+  // },
+  // {
+  //   title: 'ブログプラットフォーム',
+  //   description:
+  //     'マークダウンエディタを備えたブログプラットフォーム。記事の作成・編集・公開、タグ管理、検索機能、コメント機能を実装。認証にはNextAuth.jsを使用し、セキュアなユーザー管理を実現。',
+  //   image: '/images/project5.jpg',
+  //   tags: ['Next.js', 'NextAuth.js', 'Prisma', 'PostgreSQL', 'MDX'],
+  //   githubUrl: 'https://github.com/yourusername/blog-platform',
+  //   demoUrl: 'https://blog-platform-demo.vercel.app',
+  // },
+  // {
+  //   title: '天気予報アプリ',
+  //   description:
+  //     'OpenWeather APIを使用した天気予報アプリ。現在地の天気情報、7日間の天気予報、都市検索機能を実装。レスポンシブデザインとダークモードに対応。',
+  //   image: '/images/project6.jpg',
+  //   tags: ['React', 'TypeScript', 'OpenWeather API', 'Tailwind CSS'],
+  //   githubUrl: 'https://github.com/yourusername/weather-app',
+  //   demoUrl: 'https://weather-app-demo.vercel.app',
+  // },
 ];
 
 export const revalidate = 3600; // 1時間ごとに再検証

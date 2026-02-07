@@ -9,13 +9,13 @@ export default function Hero() {
           <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-6xl">
             こんにちは、
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-purple-500 dark:from-purple-400 dark:to-purple-300">
-              プログラミングを愛する人です
+              コンピューティングを愛する人です
             </span>
           </h1>
 
           {/* Subtitle */}
           <p className="mt-6 text-lg leading-8 text-gray-600 dark:text-gray-400 sm:text-xl">
-            モダンなWebアプリケーションとユーザー体験を創造します。
+            モダンなアプリケーションとユーザー体験を創造します。
             <br />
             サーバからAIまで、幅広い技術スタックに対応しています。
           </p>
